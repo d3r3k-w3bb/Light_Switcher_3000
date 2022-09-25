@@ -5,6 +5,11 @@
 #include <Servo.h>
 #include <TaskScheduler.h>
 #include "conf.h"
+#include "SocketIOClient.h"
+#include <Hash.h>
+#include <stdio.h>
+
+SocketIOClient socket;
 
 Servo switch1;
 Servo switch2;
@@ -54,6 +59,39 @@ bool debounceB2() {
   static uint16_t state2 = 0;
   state2 = (state2<<1) | digitalRead(B2) | 0xfe00;
   return (state2 == 0xff00);
+}*/
+
+/*void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length) {
+    switch(type) {
+        case sIOtype_DISCONNECT:
+            Serial.printf("[IOc] Disconnected!\n");
+            break;
+        case sIOtype_CONNECT:
+            Serial.printf("[IOc] Connected to url: %s\n", payload);
+
+            // join default namespace (no auto join in Socket.IO V3)
+            socketIO.send(sIOtype_CONNECT, "/");
+            break;
+        case sIOtype_EVENT:
+            Serial.printf("[IOc] get event: %s\n", payload);
+            break;
+        case sIOtype_ACK:
+            Serial.printf("[IOc] get ack: %u\n", length);
+            hexdump(payload, length);
+            break;
+        case sIOtype_ERROR:
+            Serial.printf("[IOc] get error: %u\n", length);
+            hexdump(payload, length);
+            break;
+        case sIOtype_BINARY_EVENT:
+            Serial.printf("[IOc] get binary: %u\n", length);
+            hexdump(payload, length);
+            break;
+        case sIOtype_BINARY_ACK:
+            Serial.printf("[IOc] get binary ack: %u\n", length);
+            hexdump(payload, length);
+            break;
+    }
 }*/
 
 void sense_light(){
@@ -123,6 +161,8 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(B1),mv_switch1, FALLING);
   attachInterrupt(digitalPinToInterrupt(B2),mv_switch2, FALLING);
 
+  socket.connect("192.168.254.75",5000);
+
   runner.addTask(Sense);
   Sense.enable();
 
@@ -131,4 +171,5 @@ void setup() {
 void loop() {
   ArduinoOTA.handle();
   runner.execute();
+  socket.monitor();
 }
