@@ -5,6 +5,11 @@
 #include <Servo.h>
 #include <TaskScheduler.h>
 #include "conf.h"
+//#include "SocketIOClient.h"
+#include <Hash.h>
+#include <stdio.h>
+
+//SocketIOClient socket;
 
 Servo switch1;
 Servo switch2;
@@ -24,27 +29,11 @@ bool leds_onoff = HIGH;
 
 bool onoff = 0;
 
+int count = 0;
+
 Scheduler runner;
 
-ICACHE_RAM_ATTR void mv_switch1(){
-  static bool b1_state = HIGH;
-  b1_state ? switch1.write(0) : switch1.write(78);
-  if (b1_state){
-    leds_onoff = LOW;
-  }
-  else{
-    leds_onoff = HIGH;
-  }
-  b1_state = !b1_state;
-}
-
-ICACHE_RAM_ATTR void mv_switch2(){
-  static bool b2_state = HIGH;
-  b2_state ? switch2.write(7) : switch2.write(82);
-  b2_state = !b2_state;
-}
-
-/*bool debounceB1() {
+bool debounceB1() {
   static uint16_t state = 0;
   state = (state<<1) | digitalRead(B1) | 0xfe00;
   return (state == 0xff00);
@@ -54,20 +43,50 @@ bool debounceB2() {
   static uint16_t state2 = 0;
   state2 = (state2<<1) | digitalRead(B2) | 0xfe00;
   return (state2 == 0xff00);
-}*/
+}
+
+void check_buttons(){
+  if (debounceB1()){
+    static bool b1_state = HIGH;
+    b1_state ? switch1.write(0) : switch1.write(78);
+    if (b1_state){
+      analogWrite(LED, 150);
+      leds_onoff = LOW;
+    }
+    else{
+      leds_onoff = HIGH;
+    }
+    b1_state = !b1_state;
+  }
+  if (debounceB2()){
+    static bool b2_state = HIGH;
+    b2_state ? switch2.write(7) : switch2.write(82);
+    b2_state = !b2_state;
+  }
+}
 
 void sense_light(){
+  static int duty = 150;
+  static int value = 0;
   if(!leds_onoff){
     int sensor = analogRead(AN_IN);
-    int duty = map(sensor, 0, 650, 3, 254);
-    analogWrite(LED, duty);
+    int value = map(sensor, 0, 650, 3, 254);
+    if(duty < value){
+      analogWrite(LED, ++duty);  
+    }
+    if(duty > value){
+      analogWrite(LED, --duty);
+    }
+    else{
+      analogWrite(LED, duty);
+    }
   }
   else{
     analogWrite(LED,0);
   }
 }
 
-Task Sense(3000,TASK_FOREVER, &sense_light);
+Task Sense(200,TASK_FOREVER, &sense_light);
 
 // Replace with your network credentials
 const char* ssid = SECRET_SSID;
@@ -120,10 +139,8 @@ void setup() {
   pinMode(built_in_led, OUTPUT);
   digitalWrite(built_in_led, HIGH);
 
-  attachInterrupt(digitalPinToInterrupt(B1),mv_switch1, FALLING);
-  attachInterrupt(digitalPinToInterrupt(B2),mv_switch2, FALLING);
-
   runner.addTask(Sense);
+  //runner.addTask(Buttons);
   Sense.enable();
 
 }
@@ -131,4 +148,9 @@ void setup() {
 void loop() {
   ArduinoOTA.handle();
   runner.execute();
+  //socket.monitor();
+  if (count % 50 == 0){  
+    check_buttons();
+  }
+  count++;
 }
