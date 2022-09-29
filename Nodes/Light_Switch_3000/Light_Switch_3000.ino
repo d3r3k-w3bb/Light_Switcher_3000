@@ -10,7 +10,7 @@
 #include <stdio.h>
 
 //SocketIOClient socket;
-
+//Derek is cool
 Servo switch1;
 Servo switch2;
 
