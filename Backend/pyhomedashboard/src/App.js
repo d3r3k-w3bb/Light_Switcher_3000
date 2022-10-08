@@ -6,11 +6,25 @@ import { Toggle } from './components/Toggle';
 import React from 'react';
 import { Widget } from './components/Widget';
 import { ButtonArray } from './components/ButtonArray';
-import io from 'socket.io-client';
 import { useEffect } from 'react';
 import Button from '@mui/material/Button';
 import {Tabs, Tab} from '@mui/material';
+import mqtt from 'mqtt';
 
+
+// const client  = mqtt.connect('mqtt://localhost:1883', [{ clientId: 'pyhome' }]);
+
+// client.on('connect', function () {
+//   client.subscribe('presence', function (err) {
+//     if (!err) {
+//       client.publish('presence', 'Hello mqtt')
+//     }
+//   })
+// });
+
+// client.on('connect', () => {
+//   console.log('connected');
+// });
 
 const roomList = [
   {
@@ -25,18 +39,9 @@ const roomList = [
   }
 ];
 
-// Create socketio connection to websocket server on port 5000
-const socket = io('http://192.168.254.75:5000');
-
-// Listen for 'connect' event from websocket server
-socket.on('connect', () => {
-  console.log('Connected to websocket server');
-});
-
 // send fetchRoomList websocket event
 const fetchRoomList = () => {
   console.log("Fetching room list");
-  socket.emit('fetchRoomList');
 }
 
 function App() {
@@ -45,10 +50,10 @@ function App() {
   const [isOn, setIsOn] = React.useState(false);
   
   useEffect(() => {
-    socket.on('roomsInfo', (data) => {
-      console.log(data);
-      setRooms(data);
-    });
+    // socket.on('roomsInfo', (data) => {
+    //   console.log(data);
+    //   setRooms(data);
+    // });
     fetchRoomList();
   }, []);
 
